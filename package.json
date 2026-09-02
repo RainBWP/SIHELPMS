@@ -15,6 +15,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
     "vue": "^3.5.29"
   },
   "devDependencies": {

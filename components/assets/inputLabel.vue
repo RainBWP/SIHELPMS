@@ -1,9 +1,9 @@
 
 
 <script lang="ts" setup>
-
 import BotonPeque from './boton-peque.vue';
-import botonPeque from './boton-peque.vue';
+
+const modelValue = defineModel<string>({ default: '' });
 
 const onImportarExcel = () => {
   console.log('Importar Excel');
@@ -16,11 +16,10 @@ const onImportarExcel = () => {
 			id="input-label"
 			name="input-label"
 			class="student-input"
+			v-model="modelValue"
 			placeholder="Introduzca aqui las curps o numero de control de los alumnos"
 		></textarea>
-        <BotonPeque 
-            label="Importar Excel"
-            />
+		<BotonPeque label="Importar Excel" :action="onImportarExcel" />
 		
   </div>
 </template>

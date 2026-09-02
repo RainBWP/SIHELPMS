@@ -13,23 +13,22 @@ const runAction = () => {
 
 <template>
 	<div
-		:class="$style.boton"
+		class="small-button"
 		role="button"
 		tabindex="0"
 		@click="runAction"
 		@keydown.enter="runAction"
 		@keydown.space.prevent="runAction"
 	>
-		<div :class="$style.boton2">{{ props.label }}</div>
+		<div class="small-button-label">{{ props.label }}</div>
 	</div>
 </template>
-<style module>
-.boton {
+<style scoped>
+.small-button {
   	position: relative;
 	border-radius: 100px;
 	background-color: #bc955c;
-	width: 100%;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	padding: 5px 10px;
@@ -37,9 +36,10 @@ const runAction = () => {
 	text-align: left;
 	font-size: 10px;
 	color: #fff;
+	cursor: pointer;
 }
 
-.boton2 {
+.small-button-label {
   position: relative;
 }
 
