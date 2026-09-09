@@ -13,6 +13,7 @@ export default defineConfig({
 			},
 		},
 		host_permissions: ['https://siseems.sems.gob.mx/*'],
+		permissions: ['sidePanel', 'scripting', 'tabs'],
 	},
 	modules: ['@wxt-dev/module-vue'],
 });
