@@ -20,6 +20,7 @@ stats-*.json
 # Environment files
 .env
 .env.*
+.vscode
 
 # Optional npm cache directory
 .npm/
