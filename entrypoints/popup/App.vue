@@ -157,9 +157,9 @@ const onDescargarTitulos = async () => {
     </div>
 
 		<div class="info-block">
-      <Boton label="Obtener Informacion" :action="onObtenerInformacion" />
+       <Boton v-if="false" label="Obtener Informacion" :action="onObtenerInformacion" />
 			<p class="help-text">
-        En revision de Expedientes, obtiene los estados de los estudiantes. Lo exporta a un Excel
+        	En creación, actualmente descarga automaticamente los titulos aqui ingresados
 			</p>
     </div>
 
@@ -167,7 +167,7 @@ const onDescargarTitulos = async () => {
 
 		<div class="actions-block">
 			<div class="action-row">
-				<div class="action-item">
+				<div v-if="false" class="action-item">
         		<Boton label="Buscar Alumnos" :action="onBuscarAlumnos" />
 				</div>
 				<div class="action-item">
@@ -184,18 +184,18 @@ const onDescargarTitulos = async () => {
 <style scoped>
 .main {
 	width: 100%;
-	height: 600px;
+	height: 100%;
 	border-radius: 20px;
 	background-color: #fff;
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-start;
+	align-items: center;
 	padding: 20px;
 	box-sizing: border-box;
 	gap: 16px;
 	text-align: left;
-	font-size: 12px;
+	font-size: 14px;
 	color: #ddc9a3;
 	font-family: 'Comic Neue';
 }
@@ -206,6 +206,7 @@ const onDescargarTitulos = async () => {
 	flex-direction: column;
 	gap: 2px;
 	color: #a7201f;
+	user-select: none;
 }
 
 .title-row {
@@ -220,13 +221,14 @@ const onDescargarTitulos = async () => {
 .title {
 	position: relative;
 	margin: 0;
-	font-size: 20px;
+	font-size: 30px;
 	line-height: 1;
 }
 
 .close-text {
 	position: relative;
 	margin: 0;
+	user-select: none;
 }
 
 .close-btn {
@@ -236,13 +238,12 @@ const onDescargarTitulos = async () => {
 	align-items: center;
 	justify-content: center;
 	padding: 5px 10px;
-	font-size: 10px;
 	color: #fff;
 }
 
 .author {
 	position: relative;
-	font-size: 10px;
+	font-size: 14px;
 	flex-shrink: 0;
 	margin: 0;
 }
@@ -258,12 +259,13 @@ const onDescargarTitulos = async () => {
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 6px;
+	user-select: none;
 }
 
 .help-text {
 	align-self: stretch;
 	position: relative;
-	font-size: 8px;
+	font-size: 11px;
 	font-weight: 300;
 	color: #95959a;
 	margin: 0;
@@ -281,7 +283,7 @@ const onDescargarTitulos = async () => {
 	align-self: stretch;
 	display: flex;
 	align-items: flex-start;
-	gap: 10px;
+	gap: 14px;
 }
 
 .action-item {
@@ -291,7 +293,7 @@ const onDescargarTitulos = async () => {
 .footer-text {
 	align-self: stretch;
 	position: relative;
-	font-size: 8px;
+	font-size: 12px;
 	font-weight: 300;
 	color: #000;
 	text-align: left;

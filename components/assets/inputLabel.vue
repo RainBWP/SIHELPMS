@@ -19,7 +19,7 @@ const onImportarExcel = () => {
 			v-model="modelValue"
 			placeholder="Introduzca aqui las curps o numero de control de los alumnos"
 		></textarea>
-		<BotonPeque label="Importar Excel" :action="onImportarExcel" />
+		<BotonPeque v-if="false" label="Importar Excel" :action="onImportarExcel" />
 		
   </div>
 </template>
@@ -41,7 +41,7 @@ const onImportarExcel = () => {
 	min-height: 70px;
 	max-height: 300px;
 	text-align: left;
-	font-size: 10px;
+	font-size: 12px;
 	color: #575757;
 	font-family: 'Comic Neue';
 }
@@ -50,7 +50,7 @@ const onImportarExcel = () => {
 	width: 100%;
 	height: 100%;
 	position: relative;
-	font-size: 12px;
+	font-size: 14px;
 	font-family: 'Comic Neue';
 	color: #000;
 	text-align: left;

@@ -34,7 +34,7 @@ const runAction = () => {
 	padding: 5px 10px;
 	box-sizing: border-box;
 	text-align: left;
-	font-size: 10px;
+	font-size: 12px;
 	color: #fff;
 	cursor: pointer;
 }

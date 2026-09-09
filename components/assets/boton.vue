@@ -36,7 +36,7 @@ const runAction = () => {
   cursor: pointer;
   box-sizing: border-box;
   text-align: left;
-  font-size: 12px;
+  font-size: 16px;
   color: #ddc9a3;
   font-family: 'Comic Neue';
 }
