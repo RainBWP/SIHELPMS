@@ -28,18 +28,18 @@ body {
 
 .main {
 	width: 100%;
-	height: 600px;
+	height: 100%;
 	border-radius: 20px;
 	background-color: #fff;
 	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-start;
+	align-items: center;
 	padding: 20px;
 	box-sizing: border-box;
 	gap: 16px;
 	text-align: left;
-	font-size: 12px;
+	font-size: 14px;
 	color: #ddc9a3;
 	font-family: 'Comic Neue';
 }
@@ -50,6 +50,7 @@ body {
 	flex-direction: column;
 	gap: 2px;
 	color: #a7201f;
+	user-select: none;
 }
 
 .title-row {
@@ -64,13 +65,14 @@ body {
 .title {
 	position: relative;
 	margin: 0;
-	font-size: 20px;
+	font-size: 30px;
 	line-height: 1;
 }
 
 .close-text {
 	position: relative;
 	margin: 0;
+	user-select: none;
 }
 
 .close-btn {
@@ -80,13 +82,12 @@ body {
 	align-items: center;
 	justify-content: center;
 	padding: 5px 10px;
-	font-size: 10px;
 	color: #fff;
 }
 
 .author {
 	position: relative;
-	font-size: 10px;
+	font-size: 14px;
 	flex-shrink: 0;
 	margin: 0;
 }
@@ -102,12 +103,13 @@ body {
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 6px;
+	user-select: none;
 }
 
 .help-text {
 	align-self: stretch;
 	position: relative;
-	font-size: 8px;
+	font-size: 11px;
 	font-weight: 300;
 	color: #95959a;
 	margin: 0;
@@ -125,7 +127,7 @@ body {
 	align-self: stretch;
 	display: flex;
 	align-items: flex-start;
-	gap: 10px;
+	gap: 14px;
 }
 
 .action-item {
@@ -135,7 +137,7 @@ body {
 .footer-text {
 	align-self: stretch;
 	position: relative;
-	font-size: 8px;
+	font-size: 12px;
 	font-weight: 300;
 	color: #000;
 	text-align: left;
