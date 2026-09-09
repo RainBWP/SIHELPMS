@@ -51,17 +51,65 @@ const onDescargarTitulos = async () => {
 		return;
 	}
 
+	const urlActiva = tab.url ? new URL(tab.url) : null;
+	const esPaginaSiseems = urlActiva?.hostname === 'siseems.sems.gob.mx';
+	const esPaginaIncorporadas = urlActiva?.hostname === '172.31.84.14';
+
+	if (!esPaginaSiseems && !esPaginaIncorporadas) {
+		addLog('La pestana activa no pertenece a una pagina compatible');
+		return;
+	}
+
 	try {
 		const [resultado] = await browser.scripting.executeScript({
 			target: { tabId: tab.id },
-			args: [listaCurps],
-			func: async (curps: string[]) => {
+			args: [listaCurps, esPaginaIncorporadas],
+			func: async (curps: string[], esPaginaIncorporadas: boolean) => {
 				const mensajes: string[] = [];
 				const registrar = (mensaje: string) => {
 					mensajes.push(mensaje);
 					console.log(mensaje);
 				};
-			const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+				if (esPaginaIncorporadas) {
+					const filas = document.querySelectorAll('#tabla_alumnos tbody tr');
+					const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+					let descargados = 0;
+
+					for (const curp of curps) {
+						const fila = Array.from(filas).find((elemento) => elemento.innerHTML.includes(curp));
+						const enlacePdf = fila?.querySelector<HTMLAnchorElement>(
+							'a[href*="/tituloreporte/"][target="_blank"]',
+						);
+
+						if (!enlacePdf?.href) {
+							continue;
+						}
+
+						try {
+							const response = await fetch(enlacePdf.href);
+							if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+							const blobUrl = window.URL.createObjectURL(await response.blob());
+							const enlaceDescarga = document.createElement('a');
+							enlaceDescarga.href = blobUrl;
+							enlaceDescarga.download = `${curp}.pdf`;
+							document.body.appendChild(enlaceDescarga);
+							enlaceDescarga.click();
+							enlaceDescarga.remove();
+							window.URL.revokeObjectURL(blobUrl);
+							descargados++;
+							await delay(1000);
+						} catch (error) {
+							console.error(`Error al descargar ${curp}`, error);
+						}
+					}
+
+					registrar(`Proceso terminado. Se descargaron ${descargados} titulos.`);
+					return mensajes;
+				}
+
+				const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 			const descargarPDF = async (curp: string, token: string) => {
 				const url = `https://siseems.sems.gob.mx/produccion/protected/pages/titulacion/digital/titulodigital2019.php?${token}`;
