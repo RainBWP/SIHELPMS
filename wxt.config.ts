@@ -2,6 +2,12 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
 	manifest: {
+		name: 'SIHELPMS',
+        short_name: 'SIHELPMS',
+        description:
+            'Extensión para descargar títulos digitales desde SISEEMS usando listas de CURPs.',
+        homepage_url: 'https://github.com/RainBWP/SIHELPMS',
+
 		action: {
 			default_title: 'SIHELPMS',
 			default_icon: {

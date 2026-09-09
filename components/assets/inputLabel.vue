@@ -17,7 +17,7 @@ const onImportarExcel = () => {
 			name="input-label"
 			class="student-input"
 			v-model="modelValue"
-			placeholder="Introduzca aqui las curps o numero de control de los alumnos"
+			placeholder="Introduzca aqui las curps de los alumnos"
 		></textarea>
 		<BotonPeque v-if="false" label="Importar Excel" :action="onImportarExcel" />
 		
