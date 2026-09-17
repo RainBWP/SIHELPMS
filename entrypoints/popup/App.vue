@@ -20,12 +20,22 @@ const iniciarLecturaDeProgreso = async (tabId: number) => {
 		try {
 			const [resultado] = await browser.scripting.executeScript({
 				target: { tabId },
-				func: () => (globalThis as typeof globalThis & {
-					__sihelpmsProgreso?: { actual: number; total: number };
-				}).__sihelpmsProgreso ?? null,
+				world: 'MAIN',
+				func: () => {
+					const estado = globalThis as typeof globalThis & {
+						__sihelpmsProgreso?: { actual: number; total: number };
+						__sihelpmsLogs?: string[];
+					};
+
+					return {
+						progreso: estado.__sihelpmsProgreso ?? null,
+						logs: estado.__sihelpmsLogs ?? null,
+					};
+				},
 			});
 
-			if (resultado?.result) progreso.value = resultado.result;
+			if (resultado?.result?.progreso) progreso.value = resultado.result.progreso;
+			if (resultado?.result?.logs) logs.value = [...resultado.result.logs];
 		} catch {
 			// La pestaña puede cambiar o cerrarse mientras termina la operación.
 		}
@@ -59,27 +69,34 @@ const addLog = (message: string) => {
 	logs.value.push(message);
 };
 
+const obtenerCurps = (texto: string) => Array.from(
+	texto.toUpperCase().matchAll(/[A-Z]{4}\d{6}[A-Z]{6}[A-Z0-9]\d/g),
+	(match) => match[0],
+);
+
 const onObtenerInformacion = () => {
 	clearLogs();
   addLog('Obtener informacion');
-  console.log('Obtener informacion');
+	// console.log('Obtener informacion');
 };
 
 const onBuscarAlumnos = () => {
 	clearLogs();
   addLog('Buscar alumnos');
-  console.log('Buscar alumnos');
+  // console.log('Buscar alumnos');
 };
 
 const onChecarResponsiva = async () => {
+	/* console.log('[SIHELPMS][RESPONSIVAS] Inicio', {
+		textoOriginal: JSON.stringify(inputText.value),
+		operacionActiva: operacionActiva.value,
+	}); */
 	if (operacionActiva.value) return;
 	operacionActiva.value = 'responsivas';
 	clearLogs();
 
-	const listaCurps = inputText.value
-		.split('\n')
-		.map((curp) => curp.trim())
-		.filter((curp) => curp.length > 0);
+	const listaCurps = obtenerCurps(inputText.value);
+	// console.log('CURPs extraidas:', listaCurps, 'Total:', listaCurps.length);
 
 	if (listaCurps.length === 0) {
 		addLog('No hay CURPs para procesar');
@@ -89,6 +106,7 @@ const onChecarResponsiva = async () => {
 
 	const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
 	const urlActiva = tab?.url ? new URL(tab.url) : null;
+	// console.log('Pestana activa:', { id: tab?.id, url: tab?.url, hostname: urlActiva?.hostname });
 
 	if (urlActiva?.hostname !== 'siseems.sems.gob.mx') {
 		addLog('No se puede checar responsivas en esta pagina');
@@ -105,12 +123,29 @@ const onChecarResponsiva = async () => {
 
 	try {
 		progreso.value = { actual: 0, total: listaCurps.length };
+		// console.log('Inyectando responsivas en tab:', tabId);
 		void iniciarLecturaDeProgreso(tabId);
 		const [resultado] = await browser.scripting.executeScript({
 			target: { tabId },
+			world: 'MAIN',
 			args: [listaCurps],
 			func: async (curps: string[]) => {
+				const debug = (..._datos: unknown[]) => {
+					// console.log('[SIHELPMS][RESPONSIVAS]', ..._datos);
+				};
+				const curpsRecibidas = [...curps];
+				debug('CURPs recibidas en la pagina:', curpsRecibidas);
+				curps = curps.filter((curp) => /^[A-Z]{4}\d{6}[A-Z]{6}[A-Z0-9]\d$/.test(curp));
+				debug('CURPs despues del filtro:', curps, 'Total:', curps.length);
+				debug('Estado global:', {
+					checarResponsiva: typeof (globalThis as typeof globalThis & {
+						checar_responsiva?: unknown;
+					}).checar_responsiva,
+					url: location.href,
+				});
 				const mensajes: string[] = [];
+				const estado = globalThis as typeof globalThis & { __sihelpmsLogs?: string[] };
+				estado.__sihelpmsLogs = mensajes;
 				const actualizarProgreso = (actual: number) => {
 					(globalThis as typeof globalThis & {
 						__sihelpmsProgreso?: { actual: number; total: number };
@@ -119,10 +154,21 @@ const onChecarResponsiva = async () => {
 				actualizarProgreso(0);
 				const registrar = (mensaje: string) => {
 					mensajes.push(mensaje);
-					console.log(mensaje);
+					// console.log(mensaje);
 				};
 				const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 				const obtenerFilas = () => Array.from(document.querySelectorAll('tr[id^="tr"]'));
+				const describirFila = (fila: Element | undefined) => fila ? {
+					idFila: fila.id,
+					texto: fila.textContent?.trim().slice(0, 180),
+					checkboxes: Array.from(fila.querySelectorAll<HTMLInputElement>('input')).map((input) => ({
+						id: input.id,
+						value: input.value,
+						checked: input.checked,
+						disabled: input.disabled,
+						clase: input.className,
+					})),
+				} : null;
 				const buscarFila = (curp: string) => obtenerFilas().find((fila) => {
 					const celdaCurp = fila.querySelector('td:nth-child(1)');
 					return celdaCurp?.textContent?.includes(curp) ?? false;
@@ -138,11 +184,17 @@ const onChecarResponsiva = async () => {
 					return checkbox?.checked || checkbox?.hasAttribute('checked') || false;
 				};
 				const esperarTabla = async (curp: string, maxSegundos = 30) => {
+					debug('Esperando fila:', curp, 'maximo segundos:', maxSegundos);
 					for (let intento = 0; intento < maxSegundos * 2; intento++) {
 						const fila = buscarFila(curp);
-						if (fila) return fila;
+						if (fila) {
+							debug('Fila encontrada:', curp, describirFila(fila));
+							return fila;
+						}
+						if ([0, 10, 30, 59].includes(intento)) debug('Fila no encontrada; intento:', intento, 'filas:', obtenerFilas().length);
 						await delay(500);
 					}
+					debug('Timeout esperando fila:', curp);
 					return null;
 				};
 				const esperarTablaCargada = async (maxSegundos = 30) => {
@@ -152,12 +204,25 @@ const onChecarResponsiva = async () => {
 					}
 					return false;
 				};
-				const esperarValidacion = async (curp: string, id: string, maxSegundos = 30) => {
+				const esperarRecargaTabla = async (curp: string, filaAnterior: Element, maxSegundos = 30) => {
+					debug('Esperando recarga de tabla:', curp, 'maximo segundos:', maxSegundos);
+					const htmlAnterior = filaAnterior.outerHTML;
+					await delay(1500);
+
 					for (let intento = 0; intento < maxSegundos * 2; intento++) {
 						const fila = buscarFila(curp);
-						if (fila && estaValidada(fila, id)) return fila;
+						const idActual = fila ? extraerId(fila) : null;
+						const tablaRecargada = Boolean(fila && (fila !== filaAnterior || fila.outerHTML !== htmlAnterior));
+						if (fila && idActual && (tablaRecargada || estaValidada(fila, idActual))) {
+							debug('Tabla recargada:', { curp, idActual, validada: estaValidada(fila, idActual), fila: describirFila(fila) });
+							return fila;
+						}
+						if ([0, 10, 30, 59].includes(intento)) {
+							debug('Aun no recargada:', { curp, intento, idActual, fila: describirFila(fila) });
+						}
 						await delay(500);
 					}
+					debug('Timeout esperando recarga de tabla:', curp);
 					return null;
 				};
 
@@ -167,14 +232,19 @@ const onChecarResponsiva = async () => {
 					const id = fila ? extraerId(fila) : null;
 					return Boolean(fila && id && estaValidada(fila, id));
 				});
+				debug('Resultado de validadas iniciales:', validadas);
 				registrar(validadas.length > 0
 					? `Ya validadas: ${validadas.join(', ')}`
 					: 'Ya validadas: ninguna');
 
-				for (const [indice, curp] of curps.entries()) {
+				for (let indice = 0; indice < curps.length; indice++) {
+					const curp = curps[indice];
+					if (!curp) continue;
+					debug('Procesando CURP:', { indice: indice + 1, total: curps.length, curp });
 					actualizarProgreso(indice + 1);
 					let fila = await esperarTabla(curp);
 					const id = fila ? extraerId(fila) : null;
+					debug('Fila e ID iniciales:', { curp, id, fila: describirFila(fila ?? undefined) });
 
 					if (!fila || !id) {
 						registrar(`No se puede validar ${curp}`);
@@ -187,21 +257,50 @@ const onChecarResponsiva = async () => {
 					}
 
 					registrar(`[${indice + 1}/${curps.length}] Validando: ${curp}`);
-					const checarResponsiva = (globalThis as typeof globalThis & {
-						checar_responsiva?: (idResponsiva: number) => void;
-					}).checar_responsiva;
+					const ejecutarChecarResponsiva = (filaObjetivo: Element, idObjetivo: string) => {
+						const pagina = globalThis as typeof globalThis & {
+							checar_responsiva?: (idResponsiva: number) => void;
+						};
 
-					if (!checarResponsiva) {
+						debug('Intentando checar responsiva:', {
+							id: idObjetivo,
+							funcion: typeof pagina.checar_responsiva,
+							fila: describirFila(filaObjetivo),
+						});
+
+						if (pagina.checar_responsiva) {
+							try {
+								pagina.checar_responsiva(Number(idObjetivo));
+								debug('checar_responsiva ejecutada:', Number(idObjetivo));
+								return true;
+							} catch (error) {
+								debug('Error dentro de checar_responsiva:', error);
+								return false;
+							}
+						}
+
+						const checkbox = filaObjetivo.querySelector<HTMLInputElement>(
+							`#check_res_${idObjetivo}, input.class_resxx`,
+						);
+						checkbox?.click();
+						debug('Fallback checkbox ejecutado:', { existe: Boolean(checkbox), id: checkbox?.id });
+						return Boolean(checkbox);
+					};
+
+					if (!ejecutarChecarResponsiva(fila, id)) {
 						registrar(`No se puede validar ${curp}`);
 						continue;
 					}
 
-					checarResponsiva(Number(id));
 					await delay(1500);
-					checarResponsiva(Number(id));
-					fila = await esperarValidacion(curp, id, 30);
+					const filaSegundoIntento = buscarFila(curp) ?? fila;
+					const idSegundoIntento = extraerId(filaSegundoIntento) ?? id;
+					debug('Segundo intento:', { idSegundoIntento, fila: describirFila(filaSegundoIntento) });
+					ejecutarChecarResponsiva(filaSegundoIntento, idSegundoIntento);
+					fila = await esperarRecargaTabla(curp, fila, 30);
 
-					if (fila && estaValidada(fila, id)) {
+					const idActual = fila ? extraerId(fila) : null;
+					if (fila && idActual) {
 						registrar(`Validada: ${curp}`);
 					} else {
 						registrar(`No se puede validar ${curp}`);
@@ -213,7 +312,7 @@ const onChecarResponsiva = async () => {
 			},
 		});
 
-		logs.value.push(...(resultado?.result ?? []));
+		if (resultado?.result) logs.value = resultado.result;
 		finalizarOperacion();
 	} catch (error) {
 		addLog(`No se puede validar: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -227,14 +326,11 @@ const onDescargarTitulos = async () => {
 	clearLogs();
 	addLog('Iniciando descarga de titulos...');
 
-	const listaCurps = inputText.value
-		.split('\n')
-		.map((curp) => curp.trim())
-		.filter((curp) => curp.length > 0);
+	const listaCurps = obtenerCurps(inputText.value);
 
 	if (listaCurps.length === 0) {
 		addLog('No hay CURPs para procesar');
-		console.warn('No hay CURPs para procesar');
+		// console.warn('No hay CURPs para procesar');
 		finalizarOperacion();
 		return;
 	}
@@ -243,7 +339,7 @@ const onDescargarTitulos = async () => {
 
 	if (!tab?.id) {
 		addLog('No se encontro una pestana activa valida');
-		console.error('No se encontro una pestana activa valida');
+		// console.error('No se encontro una pestana activa valida');
 		finalizarOperacion();
 		return;
 	}
@@ -266,6 +362,8 @@ const onDescargarTitulos = async () => {
 			args: [listaCurps, esPaginaIncorporadas],
 			func: async (curps: string[], esPaginaIncorporadas: boolean) => {
 				const mensajes: string[] = [];
+				const estado = globalThis as typeof globalThis & { __sihelpmsLogs?: string[] };
+				estado.__sihelpmsLogs = mensajes;
 				const actualizarProgreso = (actual: number) => {
 					(globalThis as typeof globalThis & {
 						__sihelpmsProgreso?: { actual: number; total: number };
@@ -274,7 +372,7 @@ const onDescargarTitulos = async () => {
 				actualizarProgreso(0);
 				const registrar = (mensaje: string) => {
 					mensajes.push(mensaje);
-					console.log(mensaje);
+					// console.log(mensaje);
 				};
 
 				if (esPaginaIncorporadas) {
@@ -308,7 +406,7 @@ const onDescargarTitulos = async () => {
 							descargados++;
 							await delay(1000);
 						} catch (error) {
-							console.error(`Error al descargar ${curp}`, error);
+							// console.error(`Error al descargar ${curp}`, error);
 						}
 					}
 
@@ -342,7 +440,7 @@ const onDescargarTitulos = async () => {
 				} catch (error) {
 					const mensaje = `Error con ${curp}: ${error instanceof Error ? error.message : 'Error desconocido'}`;
 					mensajes.push(mensaje);
-					console.error(mensaje, error);
+					// console.error(mensaje, error);
 				}
 			};
 
@@ -375,7 +473,7 @@ const onDescargarTitulos = async () => {
 				if (!encontrado) {
 					const mensaje = `No encontre el CURP en la tabla: ${curp}`;
 					mensajes.push(mensaje);
-					console.warn(mensaje);
+					// console.warn(mensaje);
 				}
 			}
 
@@ -385,12 +483,12 @@ const onDescargarTitulos = async () => {
 			},
 		});
 
-		logs.value.push(...(resultado?.result ?? []));
+		if (resultado?.result) logs.value = resultado.result;
 		finalizarOperacion();
 	} catch (error) {
 		const mensaje = `Error al ejecutar la descarga: ${error instanceof Error ? error.message : 'Error desconocido'}`;
 		addLog(mensaje);
-		console.error(mensaje, error);
+		// console.error(mensaje, error);
 		finalizarOperacion();
 	}
 };

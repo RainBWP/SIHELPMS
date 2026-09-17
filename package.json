@@ -2,7 +2,7 @@
   "name": "SIHELPMS",
   "description": "Extensión para descargar títulos digitales desde SISEEMS usando listas de CURPs.",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "scripts": {
     "dev": "wxt -b chrome",
