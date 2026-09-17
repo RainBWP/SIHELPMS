@@ -35,3 +35,5 @@ stats-*.json
 *.njsproj
 *.sln
 *.sw?
+
+.vscode/
