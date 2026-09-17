@@ -36,7 +36,6 @@ const onImportarExcel = () => {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	padding: 10px;
 	gap: 16px;
 	min-height: 70px;
 	max-height: 300px;
@@ -62,6 +61,11 @@ const onImportarExcel = () => {
 
 .student-input::placeholder {
 	color: #575757;
+}
+
+.student-input:focus{
+	border-color: #a7201f;
+	box-shadow: 0 0 5px #a7201f
 }
 
 .import-button {

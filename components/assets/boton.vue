@@ -4,9 +4,11 @@ type ButtonAction = () => void;
 const props = defineProps<{
 	label: string;
 	action?: ButtonAction;
+  disabled?: boolean;
 }>();
 
 const runAction = () => {
+  if (props.disabled) return;
 	props.action?.();
 };
 </script>
@@ -15,7 +17,9 @@ const runAction = () => {
 	<div
 		class="button"
 		role="button"
-		tabindex="0"
+    :tabindex="props.disabled ? -1 : 0"
+    :aria-disabled="props.disabled"
+    :class="{ disabled: props.disabled }"
 		@click="runAction"
 		@keydown.enter="runAction"
 		@keydown.space.prevent="runAction"
@@ -39,6 +43,11 @@ const runAction = () => {
   font-size: 16px;
   color: #ddc9a3;
   font-family: 'Comic Neue';
+}
+
+.button.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .button-label {
