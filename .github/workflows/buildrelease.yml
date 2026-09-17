@@ -13,27 +13,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necesario para consultar los tags existentes
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
 
+      - name: Get version from package.json
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          TAG="${{ steps.get_version.outputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "El tag $TAG ya existe. Se omitirá la creación de la release para evitar sobreescribir la build."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
+        if: steps.check_tag.outputs.exists == 'false'
         run: npm ci
 
       - name: Build and Zip
+        if: steps.check_tag.outputs.exists == 'false'
         run: npx wxt zip
 
-      - name: Update tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -f latest
-          git push -f origin latest
-
       - name: Publish Release
+        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: "Latest Build"
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: "Release ${{ steps.get_version.outputs.tag }}"
+          generate_release_notes: true
           files: .output/*.zip
